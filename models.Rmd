@@ -37,16 +37,10 @@ brm <- brm(correct ~ age + (1|subid) + (age | item),
           chains = 4,
           iter = 2000)
 
-summary(brm)
-
-
 contr=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000000))
 
 lme <- glmer(correct ~ age + (1|subid) + (age | item), data = me_data, family=binomial, control = contr)
 
-x <- summary(lme)
-
-x$coefficients
 ```
 
 # Plot
