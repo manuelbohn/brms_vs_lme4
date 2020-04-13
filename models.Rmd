@@ -1,0 +1,72 @@
+---
+title: "berms vs lme4"
+author: "M. Bohn"
+date: "13 4 2020"
+output: html_document
+---
+
+
+```{r}
+library(brms)
+library(lme4)
+library(tidyverse)
+```
+
+
+# Data
+
+```{r}
+me_data <- read_csv("me.csv")%>%
+  mutate(age = scale(age_num))
+```
+
+# BRMS
+
+```{r}
+prior_me <- c(prior(normal(0, 5), class = Intercept),
+           prior(normal(0, 5), class = b),
+           prior(cauchy(0, 1), class = sd))
+
+
+brm <- brm(correct ~ age + (1|subid) + (age | item),
+                    data = me_data, family = bernoulli(),
+          control = list(adapt_delta = 0.99, max_treedepth = 20),
+          sample_prior = F,
+          prior = prior_me,
+          cores = 4,
+          chains = 4,
+          iter = 2000)
+
+summary(brm)
+
+
+contr=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000000))
+
+lme <- glmer(correct ~ age + (1|subid) + (age | item), data = me_data, family=binomial, control = contr)
+
+x <- summary(lme)
+
+x$coefficients
+```
+
+# Plot
+
+```{r}
+plot <- bind_rows(
+
+fixef(brm)%>%as_tibble()%>%mutate(se = Est.Error, model = "brm", predictor = c("intercept", "age"))%>%select(model,predictor,Estimate, se),
+
+summary(lme)$coefficients%>%as_tibble()%>%mutate(se = `Std. Error`, model = "lme", predictor = c("intercept", "age"))%>%select(model,predictor,Estimate, se)
+
+)
+
+
+ggplot(plot, aes(x = predictor, y = Estimate, col = model))+
+  geom_pointrange(aes(ymin = Estimate-se/2, ymax = Estimate+se/2), position = position_dodge(width = .5))+
+  theme_minimal()
+  
+```
+
+
+
+
