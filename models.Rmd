@@ -37,6 +37,15 @@ brm <- brm(correct ~ age + (1|subid) + (age | item),
           chains = 4,
           iter = 2000)
 
+brm_default <- brm(correct ~ age + (1|subid) + (age | item),
+                    data = me_data, family = bernoulli(),
+          control = list(adapt_delta = 0.99, max_treedepth = 20),
+          sample_prior = F,
+          cores = 4,
+          chains = 4,
+          iter = 2000)
+
+
 contr=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000000))
 
 lme <- glmer(correct ~ age + (1|subid) + (age | item), data = me_data, family=binomial, control = contr)
@@ -49,6 +58,8 @@ lme <- glmer(correct ~ age + (1|subid) + (age | item), data = me_data, family=bi
 plot <- bind_rows(
 
 fixef(brm)%>%as_tibble()%>%mutate(se = Est.Error, model = "brm", predictor = c("intercept", "age"))%>%select(model,predictor,Estimate, se),
+
+fixef(brm_default)%>%as_tibble()%>%mutate(se = Est.Error, model = "brm_default_priors", predictor = c("intercept", "age"))%>%select(model,predictor,Estimate, se),
 
 summary(lme)$coefficients%>%as_tibble()%>%mutate(se = `Std. Error`, model = "lme", predictor = c("intercept", "age"))%>%select(model,predictor,Estimate, se)
 
